@@ -1,0 +1,181 @@
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+local GuiService = game:GetService("GuiService")
+
+local guiWidth, guiHeight = 760, 240
+local titleHeight = math.floor(guiHeight * 0.55)    -- ~132 px
+local buttonsHeight = guiHeight - titleHeight       -- ~108 px
+local buttonWidth, buttonHeight = 120, 40           -- button size
+local borderThickness = 4                            -- thickness of gradient border
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "SpeedHubX_AdGui"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+-- Container frame to hold glow layers + main adFrame
+local container = Instance.new("Frame")
+container.Size = UDim2.new(0, guiWidth, 0, guiHeight)
+container.AnchorPoint = Vector2.new(1, 1)
+container.Position = UDim2.new(1, -210, 1, -190) -- adjust position if needed
+container.BackgroundTransparency = 1
+container.BorderSizePixel = 0
+container.Parent = gui
+
+-- Glow layers function
+local function createGlowLayer(parent, sizeIncrease, transparency)
+    local layer = Instance.new("Frame")
+    layer.BackgroundColor3 = Color3.fromRGB(100, 150, 255)
+    layer.BorderSizePixel = 0
+    layer.BackgroundTransparency = transparency
+    layer.Size = UDim2.new(1, sizeIncrease * 2, 1, sizeIncrease * 2)
+    layer.Position = UDim2.new(0, -sizeIncrease, 0, -sizeIncrease)
+    layer.ZIndex = 0
+    layer.Parent = parent
+    return layer
+end
+
+-- Create multiple glow layers behind the main frame
+local glowLayerCount = 5
+local baseGlowSizeIncrease = 4
+local baseGlowTransparency = 0.6
+for i = glowLayerCount, 1, -1 do
+    local transparency = baseGlowTransparency + (i - 1) * 0.1
+    if transparency > 1 then transparency = 1 end
+    local sizeIncrease = baseGlowSizeIncrease * i
+    createGlowLayer(container, sizeIncrease, transparency)
+end
+
+-- Main ad frame on top of glow layers
+local adFrame = Instance.new("Frame")
+adFrame.Name = "AdFrame"
+adFrame.Size = UDim2.new(1, 0, 1, 0)
+adFrame.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+adFrame.BorderSizePixel = 0
+adFrame.ZIndex = glowLayerCount + 1
+adFrame.Parent = container
+
+-- Function to create gradient borders
+local function createGradientBorder(parent, position, size, rotation)
+    local border = Instance.new("Frame")
+    border.Size = size
+    border.Position = position
+    border.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    border.BorderSizePixel = 0
+    border.ZIndex = adFrame.ZIndex - 1 -- behind adFrame content
+    border.Parent = parent
+
+    local gradient = Instance.new("UIGradient")
+    gradient.Rotation = rotation
+    gradient.Color = ColorSequence.new{
+        ColorSequenceKeypoint.new(0, Color3.fromRGB(255, 255, 255)),
+        ColorSequenceKeypoint.new(1, Color3.fromRGB(0, 0, 150))
+    }
+    gradient.Parent = border
+
+    return border
+end
+
+-- Create 4 gradient borders around adFrame
+createGradientBorder(adFrame, UDim2.new(0, 0, 0, 0), UDim2.new(1, 0, 0, borderThickness), 0)          -- Top
+createGradientBorder(adFrame, UDim2.new(0, 0, 1, -borderThickness), UDim2.new(1, 0, 0, borderThickness), 0) -- Bottom
+createGradientBorder(adFrame, UDim2.new(0, 0, 0, 0), UDim2.new(0, borderThickness, 1, 0), 90)          -- Left
+createGradientBorder(adFrame, UDim2.new(1, -borderThickness, 0, 0), UDim2.new(0, borderThickness, 1, 0), 90) -- Right
+
+-- Title label
+local title = Instance.new("TextLabel")
+title.Name = "Title"
+title.Size = UDim2.new(1, 0, 0, titleHeight)
+title.Position = UDim2.new(0, 0, 0, 0)
+title.BackgroundTransparency = 1
+title.Text = "Ambrion Hub | Ad"
+title.TextColor3 = Color3.fromRGB(255, 255, 255)
+title.Font = Enum.Font.GothamSemibold
+title.TextSize = 36
+title.TextStrokeColor3 = Color3.new(0, 0, 0)
+title.TextStrokeTransparency = 0.75
+title.ZIndex = adFrame.ZIndex + 1
+title.Parent = adFrame
+
+-- Description label under title
+local description = Instance.new("TextLabel")
+description.Name = "Description"
+description.Size = UDim2.new(1, 0, 0, 30)
+description.Position = UDim2.new(0, 0, 0, titleHeight - 47)
+description.BackgroundTransparency = 1
+description.Text = "Advertisements will soon be here weekly"
+description.TextColor3 = Color3.fromRGB(170, 170, 170)
+description.Font = Enum.Font.Gotham
+description.TextSize = 24
+description.TextStrokeTransparency = 1
+description.ZIndex = adFrame.ZIndex + 1
+description.Parent = adFrame
+
+-- Buttons container (below title)
+local buttonsFrame = Instance.new("Frame")
+buttonsFrame.Size = UDim2.new(1, 0, 0, buttonsHeight)
+buttonsFrame.Position = UDim2.new(0, 0, 0, titleHeight + 20)
+buttonsFrame.BackgroundTransparency = 1
+buttonsFrame.ZIndex = adFrame.ZIndex + 1
+buttonsFrame.Parent = adFrame
+
+-- Exit button
+local exit = Instance.new("TextButton")
+exit.Name = "ExitButton"
+exit.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+exit.Position = UDim2.new(0.25, -buttonWidth / 2, 0, 10)
+exit.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+exit.TextColor3 = Color3.fromRGB(255, 255, 255)
+exit.Font = Enum.Font.Gotham
+exit.TextSize = 24
+exit.Text = "Exit"
+exit.AutoButtonColor = true
+exit.ZIndex = buttonsFrame.ZIndex + 1
+exit.Parent = buttonsFrame
+
+exit.MouseButton1Click:Connect(function()
+    gui:Destroy()
+end)
+
+-- Notification label (initially invisible)
+local notification = Instance.new("TextLabel")
+notification.Name = "Notification"
+notification.Size = UDim2.new(1, 0, 0, 24)
+notification.Position = UDim2.new(0, 0, 1, 5) -- just below buttons
+notification.BackgroundTransparency = 1
+notification.TextColor3 = Color3.fromRGB(255, 150, 150)
+notification.Font = Enum.Font.GothamSemibold
+notification.TextSize = 20
+notification.Text = ""
+notification.Visible = false
+notification.ZIndex = adFrame.ZIndex + 2
+notification.Parent = adFrame
+
+-- Discord button
+local discord = Instance.new("TextButton")
+discord.Name = "DiscordButton"
+discord.Size = UDim2.new(0, buttonWidth, 0, buttonHeight)
+discord.Position = UDim2.new(0.75, -buttonWidth / 2, 0, 10)
+discord.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+discord.TextColor3 = Color3.fromRGB(255, 255, 255)
+discord.Font = Enum.Font.Gotham
+discord.TextSize = 24
+discord.Text = "Discord"
+discord.AutoButtonColor = true
+discord.ZIndex = buttonsFrame.ZIndex + 1
+discord.Parent = buttonsFrame
+
+discord.MouseButton1Click:Connect(function()
+    local success, err = pcall(function()
+        GuiService:OpenBrowserWindow("https://discord.gg/yourinvite")
+    end)
+    if not success then
+        setclipboard("https://discord.gg/yourinvite")
+        notification.Text = "Discord link copied to clipboard!"
+        notification.Visible = true
+        delay(3, function()
+            notification.Visible = false
+        end)
+    end
+end)
